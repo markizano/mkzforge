@@ -45,9 +45,26 @@ $(document).ready(function() {
       let html = '<div id="gdrive-file-list">';
       data.files.forEach(function(f) {
         const sizeMB = f.size ? (parseInt(f.size, 10) / (1024 * 1024)).toFixed(1) + ' MB' : 'unknown size';
+        // Format modified time in ISO8601 format in browser's timezone
+        let modifiedTime = 'unknown date';
+        if (f.modifiedTime) {
+          const date = new Date(f.modifiedTime);
+          // Format as ISO8601 in local timezone (YYYY-MM-DDTHH:mm:ss±HH:mm)
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          const seconds = String(date.getSeconds()).padStart(2, '0');
+          const offset = -date.getTimezoneOffset();
+          const offsetHours = String(Math.floor(Math.abs(offset) / 60)).padStart(2, '0');
+          const offsetMinutes = String(Math.abs(offset) % 60).padStart(2, '0');
+          const offsetSign = offset >= 0 ? '+' : '-';
+          modifiedTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetSign}${offsetHours}:${offsetMinutes}`;
+        }
         html += `<div class="gdrive-file-item">
           <input type="checkbox" class="gdrive-check" data-id="${f.id}" data-name="${f.name}">
-          <span>${f.name} <small>(${sizeMB})</small></span>
+          <span>${f.name} <small>(${sizeMB}, ${modifiedTime})</small></span>
         </div>`;
       });
       html += '</div>';
