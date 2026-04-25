@@ -22,6 +22,7 @@ If the video is short (less than 60 seconds), give a one sentence summary.
 If multiple points were described, use bullet points to highlight them.
 Markdown is not allowed in descriptions.
 Keep it under 5000 characters.
+Write in first person as if Markizano is speaking directly to the viewer.
 '''
 
 def getClient():

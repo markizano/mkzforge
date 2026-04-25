@@ -29,9 +29,7 @@
                 $.ajax({
                     url: '/api/project/' + encodeURIComponent(name),
                     type: 'GET',
-                    success: function(response) {
-                        displayProjectDetail(response);
-                    },
+                    success: displayProjectDetail,
                     error: function(xhr) {
                         $('#project-detail').html(
                             '<p class="error">Failed to load project: ' +
@@ -45,7 +43,7 @@
             function displayProjectDetail(project) {
                 const detail = $('#project-detail');
                 detail.empty();
-                const vidcfg = project.config.videos.shift();
+                const vidcfg = project.config.videos.pop();
                 console.log('Got project details: ', vidcfg);
 
                 const urlName = encodeURIComponent(project.name);

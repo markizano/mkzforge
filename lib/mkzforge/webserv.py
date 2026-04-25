@@ -208,7 +208,7 @@ class ApiHandlers:
             if os.path.exists(os.path.join(project_path, 'mkzforge.yml')):
                 project_config = utils.load(project_path)
             if resource == 'output':
-                output_filename = os.path.join(self.workspace, project_name, project_config['videos'][0]['output'])
+                output_filename = os.path.join(self.workspace, project_name, project_config['videos'][-1]['output'])
                 attachment_filename = os.path.basename(output_filename)
                 cherrypy.response.headers['Content-Type'] = 'video/mp4' if attachment_filename.endswith('mp4') else 'video/x-matroska'
             if resource == 'thumbnail':
@@ -348,7 +348,7 @@ def process_video_pipeline(cfg: dict, project_config: dict):
         # It's already simplified to just these interfaces, so this is OK, IMHO.
         mkzforge_cfg = utils.load()
         cfg['name'] = os.path.basename(os.getcwd())
-        video_cfg, resource = videos.detectState(**cfg)
+        video_cfg, resource = videos.detectState(mkzforge_cfg, **cfg)
         subtitles.genSubtitles(video_cfg, resource, **cfg)
         # Inject title and description into the mix before attempting to generate them.
         for descriptor in ['title', 'description']:
@@ -364,8 +364,8 @@ def process_video_pipeline(cfg: dict, project_config: dict):
 
         if not utils.hasInput(mkzforge_cfg['videos'], resource):
             mkzforge_cfg['videos'].append(video_cfg)
-        log.info('Video(s) normalized and added to `mkzforge.yml` config.')
         utils.save(mkzforge_cfg['videos'])
+        log.info('Video(s) normalized and added to `mkzforge.yml` config.')
 
         log.info(f'In-memory project config: {project_config}')
         log.info(f'In-memory MKZ config: {mkzforge_cfg}')

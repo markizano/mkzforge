@@ -180,12 +180,12 @@ def detectSilence(resource: str, **kwargs) -> list[str]:
         # Add segment before silence, extending into the silence by the padding amount
         if start > current_time:
             segment_start = current_time
-            segment_end = min(start + silence_pad, total_duration)
+            segment_end = round(min(start + silence_pad, total_duration), 3)
             segments.append((segment_start, segment_end))
 
         # Update current time to end of silence (if available), backing up by padding amount
         if i < len(silence_ends):
-            current_time = max(0.0, silence_ends[i] - silence_pad)
+            current_time = round(max(0.0, silence_ends[i] - silence_pad), 3)
 
     # Add final segment if there's content after the last silence
     if current_time < total_duration:
@@ -209,7 +209,7 @@ def detectSilence(resource: str, **kwargs) -> list[str]:
     log.info(f'Done detecting silence for {resource}!')
     return trim_filters
 
-def removeSilence(resource: str, **kwargs) -> str:
+def removeSilence(mkzforge_cfg: dict, resource: str, **kwargs) -> str:
     '''
     Process a video to remove silent segments and output to build/ directory.
     If the input is MP4, also handles conversion to MKV with CRF 28.
@@ -226,9 +226,7 @@ def removeSilence(resource: str, **kwargs) -> str:
     # Also, this is still an "internal" resource, just in the build directory.
     output = f'build/{utils.filename(resource)}.mkv'
     updateVideo(video_cfg, output=output, filter_complex=silence_filters)
-    mkzforge_cfg = utils.load()
     mkzforge_cfg['videos'].append(video_cfg)
-    utils.save(mkzforge_cfg['videos'])
     log.info(f'Processing silence removal for \x1b[1m{resource}\x1b[0m...')
     cv = compileVideo(video_cfg, **kwargs)
     if cv != 0:
@@ -349,21 +347,29 @@ def preProcessResources(mkzforge_cfg: dict, **kwargs) -> str:
     Return: Path to post-processed video path.
     '''
     to_concat: list[dict] = []
-    for resource in utils.getResources():
+    concat_filter_complex = []
+    for i, resource in enumerate(utils.getResources()):
         if utils.hasInput(mkzforge_cfg['videos'], resource): continue
         mp4tomkv(resource)
-        trimmed_video = removeSilence(resource, **kwargs)
+        trimmed_video = removeSilence(mkzforge_cfg, resource, **kwargs)
         to_concat.append({'i': trimmed_video})
+        # Workaround to the merge filters util below.
+        concat_filter_complex.append(f'[{i}:v]null[v{i}]')
+        concat_filter_complex.append(f'[{i}:a]anull[a{i}]')
     # Once we are done iterating videos that need compress & cut, combine them.
-    concat_filter_complex = utils.mergefilters(to_concat)
-    outfile = f'resources/{mkzforge_cfg["name"]}.mkv'
+    concat_filter_complex.extend(utils.mergefilters(to_concat))
+    name = kwargs.get('name', os.path.basename(os.getcwd()))
+    outfile = f'resources/{name}.mkv'
     if os.path.exists(outfile):
-        log.warning(f'The {outfile} exists, writing to `resources/_{mkzforge_cfg["name"]}.mkv`')
-        outfile = f'resources/_{mkzforge_cfg["name"]}.mkv'
+        log.warning(f'The {outfile} exists, writing to `resources/_{name}.mkv`')
+        outfile = f'resources/_{name}.mkv'
     video_cfg = {
         'input': to_concat,
         'output': outfile,
         'filter_complex': concat_filter_complex,
+        'metadata': {},
+        'attributes': [],
+        'movflags': ['+faststart'],
     }
     mkzforge_cfg['videos'].append(video_cfg)
     utils.save(mkzforge_cfg['videos'])
@@ -372,21 +378,20 @@ def preProcessResources(mkzforge_cfg: dict, **kwargs) -> str:
         log.warning('compileVideo() at this step did not succeed. This may cause downstream effects from here...')
     return outfile
 
-def detectState(**kwargs) -> tuple[dict, str]:
+def detectState(mkzforge_cfg: dict, **kwargs) -> tuple[dict, str]:
     '''
     Used in the `mkzforge normalize` function.
     Detect the current state of the environment based on the `mkzforge.yml` config and which
     resources are present on disk.
     Gets the active video configuration and the active resource we should be processing.
     '''
-    mkzforge_cfg = utils.load()
     mp4s = utils.getMP4s()
     if len(mp4s) >1:
-        resource = preProcessResources(mkzforge_cfg['videos'], **kwargs)
+        resource = preProcessResources(mkzforge_cfg, **kwargs)
     elif len(mp4s) == 1:
         mkv = mp4tomkv(mp4s[0])
         # cut-silence from video.
-        resource = removeSilence(mkv, **kwargs)
+        resource = removeSilence(mkzforge_cfg, mkv, **kwargs)
         if utils.hasInput(mkzforge_cfg['videos'], resource):
             log.info(f'Resource {resource} found in config. Loading from this...')
             idx = utils.getInputIndex(mkzforge_cfg['videos'], resource)
@@ -396,10 +401,34 @@ def detectState(**kwargs) -> tuple[dict, str]:
             video_cfg = newVideo(resource)
     else:
         # It's safe to assume these will all be MKV files.
+        log.info('No more MP4 to convert found. Checking MKV resources...')
         resources = utils.getResources()
         if len(resources) > 1:
-            log.info('Multiple MKV files found. Getting the last one off the config.')
-            video_cfg = mkzforge_cfg['videos'][-1]
+            log.info('Multiple MKV files found.')
+            if len(mkzforge_cfg['videos']) > 0:
+                log.info('More than one MKV resource in config, checking for unseen MKV files.')
+                unseen = False
+                for res in resources:
+                    if utils.hasInput(mkzforge_cfg['videos'], res): continue
+                    log.info(f'Found {res} we have not yet processed. Working on this now.')
+                    resource = res
+                    video_cfg = newVideo(res)
+                    unseen = True
+                    break
+                if not unseen:
+                    log.info('We have at least processed all MKV files once. Checking to see if they have been concatenated...')
+                    if utils.hasConcat(mkzforge_cfg['videos']):
+                        video_cfg = mkzforge_cfg['videos'][-1]
+                        resource = video_cfg['input'][0]['i']
+                        log.info(f'Videos have been concat. Working with \x1b[1m{resource}\x1b[0m')
+                    else:
+                        log.info(f'Videos have NOT been concat. Combining to produce the artifact.')
+                        resource = preProcessResources(mkzforge_cfg, **kwargs)
+                        video_cfg = newVideo(resource)
+            else:
+                log.info('Combining MKV files since we have not added them to config yet.')
+                resource = preProcessResources(mkzforge_cfg, **kwargs)
+                video_cfg = newVideo(resource)
         elif len(resources) == 1:
             resource = resources[0]
             log.info(f'Found exactly one resource. Working with \x1b[1m{resource}\x1b[0m')

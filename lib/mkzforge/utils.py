@@ -42,6 +42,17 @@ def hasInput(videos: list[dict], artifact: str) -> bool:
                 return True
     return False
 
+def hasConcat(videos: list[dict]) -> bool:
+    '''
+    Does this config set have a `concat` operation?
+    '''
+    for video in videos:
+        if 'filter_complex' not in video: continue
+        for filter_complex in video['filter_complex']:
+            if 'concat' in filter_complex:
+                return True
+    return False
+
 def getInputIndex(videos: list[dict], artifact: str) -> int|None:
     '''
     Check the list of videos.

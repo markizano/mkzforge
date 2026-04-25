@@ -32,8 +32,10 @@ def cutSilence(cfg: dict) -> int:
     Find quiet moments in the video and cut/strip them out as configured.
     '''
     log.info('Cut-Silence from resources to remove dead moments...')
+    mkzforge_cfg = utils.load()
     for resource in utils.getResources():
-        videos.removeSilence(resource, **cfg)
+        videos.removeSilence(mkzforge_cfg, resource, **cfg)
+    utils.save(mkzforge_cfg['videos'])
     log.info('Removed silence from videos!')
     return 0
 
@@ -53,7 +55,7 @@ def genSubs(cfg: dict) -> int:
             video_cfg = mkzforge_cfg['videos'][idx]
         subtitles.genSubtitles(video_cfg, resource, **cfg)
         mkzforge_cfg['videos'].append(video_cfg)
-    utils.save(mkzforge_cfg)
+    utils.save(mkzforge_cfg['videos'])
     log.info('Done generating subtitles!')
     return 0
 
@@ -106,7 +108,7 @@ def normalize(cfg: dict) -> int:
     # There's no video config to consider. So determine language as soon as possible.
     mkzforge_cfg = utils.load()
     cfg['name'] = os.path.basename(os.getcwd())
-    video_cfg, resource = videos.detectState(**cfg)
+    video_cfg, resource = videos.detectState(mkzforge_cfg, **cfg)
     subtitles.genSubtitles(video_cfg, resource, **cfg)
     metadata.generateMetadata(video_cfg, 'title', **cfg)
     metadata.generateMetadata(video_cfg, 'description', **cfg)
