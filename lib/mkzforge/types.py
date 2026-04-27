@@ -12,6 +12,7 @@ class Devices(StrEnum):
 class Action(StrEnum):
     NEW = 'new'
     BUILD = 'build'
+    CUT_SILENCE = 'cut-silence'
     GENSUBS = 'gensubs'
     GENIMG = 'genimage'
     LOADMOD = 'load-module'

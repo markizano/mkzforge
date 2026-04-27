@@ -1,5 +1,5 @@
 import kizano
-kizano.Config.APP_NAME = 'mkzforge'  # type: ignore
+kizano.Config.setAppName('mkzforge')
 
 from logging import Logger
 def getLogger(n: str, ll: str = None, lf: str = 'standard') -> Logger: return kizano.getLogger(n, ll, lf)

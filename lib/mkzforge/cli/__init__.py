@@ -30,6 +30,7 @@ class Cli(object):
 
     ACTIONS = {
         types.Action.NEW: new.gennew,
+        types.Action.CUT_SILENCE: normalize.cutSilence,
         types.Action.MP4TOMKV: normalize.compressVideos,
         types.Action.GENSUBS: normalize.genSubs,
         types.Action.GENIMG: normalize.genImage,
