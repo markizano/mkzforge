@@ -76,7 +76,7 @@ class Cli(object):
 
         # new
         new_parser = subparsers.add_parser(
-            types.Action.NEW,
+            str(types.Action.NEW),
             help='Create new project structure.',
             formatter_class=RawTextHelpFormatter
         )
@@ -89,7 +89,7 @@ class Cli(object):
 
         # mp4-to-mkv
         mp4tomkv_parser = subparsers.add_parser(
-            types.Action.MP4TOMKV,
+            str(types.Action.MP4TOMKV),
             help='Convert and compress MP4 files to MKV format.',
             formatter_class=RawTextHelpFormatter
         )
@@ -140,7 +140,7 @@ class Cli(object):
 
         # gensubs
         gensubs_parser = subparsers.add_parser(
-            types.Action.GENSUBS,
+            str(types.Action.GENSUBS),
             help='Generate subtitles for video files.',
             formatter_class=RawTextHelpFormatter
         )
@@ -176,7 +176,7 @@ class Cli(object):
 
         # genimage
         genimage_parser = subparsers.add_parser(
-            types.Action.GENIMG,
+            str(types.Action.GENIMG),
             help='Generate thumbnail images from video content.',
             formatter_class=RawTextHelpFormatter
         )
@@ -190,7 +190,7 @@ class Cli(object):
 
         # metadata
         metadata_parser = subparsers.add_parser(
-            types.Action.METADATA,
+            str(types.Action.METADATA),
             help='Generate video metadata (title and description) from subtitles.',
             formatter_class=RawTextHelpFormatter
         )
@@ -211,7 +211,7 @@ class Cli(object):
 
         # normalize (replaces refresh: mp4tomkv + silence removal + gensubs + metadata + config update)
         normalize_parser = subparsers.add_parser(
-            types.Action.NORMALIZE,
+            str(types.Action.NORMALIZE),
             help='Normalize video: convert, remove silence, generate subtitles and metadata.',
             formatter_class=RawTextHelpFormatter
         )
@@ -298,7 +298,7 @@ class Cli(object):
 
         # build
         build_parser = subparsers.add_parser(
-            types.Action.BUILD,
+            str(types.Action.BUILD),
             help='Build final video from configuration.',
             formatter_class=RawTextHelpFormatter
         )
@@ -318,7 +318,7 @@ class Cli(object):
 
         # publish
         publish_parser = subparsers.add_parser(
-            types.Action.PUBLISH,
+            str(types.Action.PUBLISH),
             help='Publish compiled video to configured endpoints (SFTP, YouTube, TikTok).',
             formatter_class=RawTextHelpFormatter
         )
@@ -331,7 +331,7 @@ class Cli(object):
 
         # serve
         serve_parser = subparsers.add_parser(
-            types.Action.SERVE,
+            str(types.Action.SERVE),
             help='Start the web interface.',
             formatter_class=RawTextHelpFormatter
         )
