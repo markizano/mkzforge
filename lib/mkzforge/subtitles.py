@@ -14,7 +14,9 @@ log = getLogger(__name__)
 markizano = re.compile(r'm[ae]r\w*[ao]no', re.I)
 kizano = re.compile(r'\bk[iu][sz][ao]n[oa]', re.I)
 draconus = re.compile(r'dr[au]c[ao]nis', re.I)
-tanninovian = re.compile(r't[ae]nn?[aie]nn?ob?i?[ae]n', re.I)
+tanninovian = re.compile(r't[ae]nn?[aie]n?n?o[bv]?i?[ae]n', re.I)
+# Caligrapher's marks
+fsck = re.compile(r'fuck', re.I)
 
 def fixSubtitles(srt_path: str) -> str:
     '''
@@ -27,6 +29,7 @@ def fixSubtitles(srt_path: str) -> str:
     subtitles = markizano.sub('Markizano', subtitles)
     subtitles = draconus.sub('Draconus', subtitles)
     subtitles = tanninovian.sub('Tanninovian', subtitles)
+    subtitles = fsck.sub('fsck', subtitles)
     open(srt_path, 'w').write(subtitles)
     return subtitles
 
