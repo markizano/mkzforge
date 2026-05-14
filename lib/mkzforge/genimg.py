@@ -14,7 +14,7 @@ from subprocess import Popen
 from mkzforge import getLogger, const
 log = getLogger(__name__)
 
-TEMPLATE_SVG = '''<svg width="585" height="1024" viewBox="0 0 1024 1024" background="none" xmlns="http://www.w3.org/2000/svg">
+TEMPLATE_SVG = '''<svg width="1024" height="1024" viewBox="0 0 1024 1024" background="none" xmlns="http://www.w3.org/2000/svg">
     <style>
         .outlined {
             fill: #04547a;
