@@ -110,8 +110,8 @@ def normalize(cfg: dict) -> int:
     cfg['name'] = os.path.basename(os.getcwd())
     video_cfg, resource = videos.detectState(mkzforge_cfg, **cfg)
     subtitles.genSubtitles(video_cfg, resource, **cfg)
-    metadata.generateMetadata(video_cfg, 'title', **cfg)
     metadata.generateMetadata(video_cfg, 'description', **cfg)
+    metadata.generateMetadata(video_cfg, 'title', **cfg)
     # Set filter_complex to None to get the default hardsub filter.
     videos.updateVideo(video_cfg, attributes=['thumbnail'], filter_complex=None)
     content = open(f'build/{utils.filename(resource)}.txt').read()

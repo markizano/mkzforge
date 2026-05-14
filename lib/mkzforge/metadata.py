@@ -11,19 +11,18 @@ log = getLogger(__name__)
 
 LLM = None
 
-GENERATE_TITLE_PROMPT = '''Generate a title.
-Based on the subtitles provided, summarize the post in a 1-3 word summary that would be an engaging title.
-No markdown or extra formatting accepted.
-Just the 1 to 3 word summary.
-'''
-
-GENERATE_DESCRIPTION_PROMPT = '''Summarize the video content for the video description.
-If the video is short (less than 60 seconds), give a one sentence summary.
-If multiple points were described, use bullet points to highlight them.
-Markdown is not allowed in descriptions.
-Keep it under 5000 characters.
+GENERATE_DESCRIPTION_PROMPT = '''You are a video metadata assistant.
+The user will provide a raw video transcript.
+Write a single-paragraph description (3-5 sentences) of what the video covers.
 Write in first person as if Markizano is speaking directly to the viewer.
-'''
+Keep it under 5000 characters.
+Plain text only. No markdown. No lists.'''
+
+GENERATE_TITLE_PROMPT = '''You are a video metadata assistant.
+The user will provide a short video description.
+Return ONLY a title: 2-4 words, plain text, no punctuation, no markdown.
+Example input: "This video walks through setting up an ECS cluster with Terraform..."
+Example output: ECS Terraform Setup'''
 
 def getClient():
     '''
@@ -57,10 +56,14 @@ def generateMetadata(video_cfg: dict, md_type: Literal['title', 'description'], 
         log.info(f'Generating {md_type} for \x1b[1m{resource}\x1b[0m from transcript at {txt_path}')
 
         # Read the transcript file content
-        subtitle_content = open(txt_path, 'r', encoding='utf-8').read()
+        content = open(txt_path, 'r', encoding='utf-8').read()
 
         if md_type == 'title':
             sysprompt = GENERATE_TITLE_PROMPT
+            # If we're generating the title, try to do it from the description.
+            # I've had long-form video where the title ends up being a huge summary of the video
+            # no matter how strict I am with the prompt.
+            content = video_cfg['metadata'].get('description', content)
         elif md_type == 'description':
             sysprompt = GENERATE_DESCRIPTION_PROMPT
         else:
@@ -68,10 +71,13 @@ def generateMetadata(video_cfg: dict, md_type: Literal['title', 'description'], 
             raise ValueError(f'Unsupported md_type: {md_type}; must be one of "title" or "description".')
         messages = [
             SystemMessage(content=sysprompt),
-            HumanMessage(content=subtitle_content)
+            HumanMessage(content=content)
         ]
         response = getClient().invoke(messages)
         value = str(response.content).strip()
+        if md_type == 'title' and  len(value.split()) > 5:
+            log.warning(f'TITLE longer than 5 words, re-generating: {value}')
+            value = generateMetadata(video_cfg, 'title', **kwargs)
     except Exception as e:
         log.error(f'Exception generating {md_type}: {e}')
         value = ''
