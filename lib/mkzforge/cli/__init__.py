@@ -138,6 +138,26 @@ class Cli(object):
             default=350
         )
 
+        # cut-silence
+        cutsilence_parser = subparsers.add_parser(
+            str(types.Action.CUT_SILENCE),
+            help='Cut silent dead moments from the video.',
+            formatter_class=RawTextHelpFormatter
+        )
+        cutsilence_parser.add_argument(
+            'resource',
+            nargs='?',
+            help='Specific video file to cut silence from.',
+            default=None
+        )
+        cutsilence_parser.add_argument(
+            '--force', '-f',
+            action='store_true',
+            dest='overwrite',
+            help='Overwrite existing output files.',
+            default=None
+        )
+
         # gensubs
         gensubs_parser = subparsers.add_parser(
             str(types.Action.GENSUBS),
